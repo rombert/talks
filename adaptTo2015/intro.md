@@ -305,3 +305,65 @@ Server-side JUnit tests
     }
 
 Actual code from [OsgiAwareTest](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/testing/samples/sample-tests/src/main/java/org/apache/sling/testing/samples/sampletests/OsgiAwareTest.java)
+
+
+Scriptable server-side tests
+---
+
+	%><sling:defineObjects/><%
+
+    // we don't check for null etc to make the test fail if the service is not available!
+    final InfoProvider ip = sling.getService(InfoProvider.class);
+    final InstallationState is = ip.getInstallationState();
+
+    String output = "";
+
+    // check 01 : no untransformed resources
+    if ( is.getUntransformedResources().size() > 0 ) {
+        output += "Untransformed resources: " + is.getUntransformedResources() + "\n";
+    }
+
+    // check 02 : no active resources
+    if ( is.getActiveResources().size() > 0 ) {
+        output += "Active resources: " + is.getActiveResources() + "\n";
+    }
+    if ( output.length() > 0 ) {
+        %><%= output %><%
+    } else {
+        %>TEST_PASSED<%
+    }
+	%>
+
+Actual code from [installer-duplicate.jsp](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/launchpad/integration-tests/src/main/resources/scripts/sling-it/installer-duplicate.jsp).
+
+End-to-end testing with Sling
+==
+
+HTTP utilities from the Sling testing tools
+--
+
+	public class HttpPingTest extends HttpTestBase {
+      public void testWebServerRoot() throws Exception {
+        // by default, the Launchpad default servlet redirects / to index.html
+        final String url = HTTP_BASE_URL + "/";
+        final GetMethod get = new GetMethod(url);
+        get.setFollowRedirects(false);
+        final int status = httpClient.executeMethod(get);
+        assertEquals("Status must be 302 for " + url, 302, status);
+        final Header h = get.getResponseHeader("Location");
+        assertNotNull("Location header must be provided",h);
+        assertTrue("Location header must end with index.html", h.getValue().endsWith("index.html"));
+      }
+    }
+    
+Final thoughts
+-
+
+* Sling provides a lot of specialised testing tools
+* Lots of effort recently invested in the unit testing layer
+* Experiment and provide feedback
+
+And ensure your tests are properly structured 
+-
+
+![ice cream cone](assets/scaled/softwaretestingicecreamconeantipattern.png)
