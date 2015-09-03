@@ -72,6 +72,9 @@ Sling oddities^W particularities
 * JCR
 * Sling APIs (Java, HTTP)
 
+Unit testing with Sling
+==
+
 Unit testing
 ---
 
@@ -182,24 +185,123 @@ Sling Mocks for unit testing
 Testing JCR code with Sling mocks
 ---
 
+    public class FindResourcesTest {
 
+      @Rule public SlingContext context = new SlingContext(ResourceResolverType.JCR_MOCK);
 
+      @Before public void setUp() {
+        Resource resource = context.create().resource("test",
+                ImmutableMap.<String, Object> builder().put("prop1", "value1")
+                        .put("prop2", "value2").build());
+		 // snip ...
+        MockJcr.setQueryResult(session, Collections.singletonList(node));
+    }
 
+    @Test public void testFindResources() {
+        Resource resource = context.resourceResolver().getResource("/test");
+        Assert.assertNotNull("Resource with name 'test' should be there", resource);
 
-Testing JCR
+        Iterator<Resource> result = context.resourceResolver().findResources("/test", Query.XPATH);
+        Assert.assertTrue("At least one result expected", result.hasNext());
+        Assert.assertEquals("/test", result.next().getPath());
+        Assert.assertFalse("At most one result expected", result.hasNext());
+      }
+    }
+
+The humble object pattern with OSGi
 ---
+    public interface RouterAdmin {
+	  void doStuff();
+	}
+	
+	public class RouterAdminImpl implements RouterAdmin {
+	  // constructor and field elided 
+      public void doStuff() {
+	    // implementation
+	  }
+	}
+	
+	@Component
+	@Properties({ @Property(name="url") })
+	public class RouterAdminComponent implements RouterAdmin() {
+	  private RouterAdmin delegate;
 
-* TransientRepository
-* JCR Mocks
+      protected void activate(ComponentContext ctx) throws Exception {
+        delegate = new RouterAdminImpl(new URL(requireString(ctx, "url")));
+      }
+      
+      public void doStuff() {
+        delegate.doStuff();
+      }
+	}
 
-Testing Sling
----
+See [Humble Object at xUnit patterns](http://xunitpatterns.com/Humble%20Object.html) for more details.
 
-* Sling Mocks
-* Server-side JUnit tests
-* HTTP-based integration tests
+Integration testing with Sling
+==
 
-Comparison
----
+Pax-Exam
+--
 
-![Comparison matrix](assets/scaled/comparison.gif)
+    public abstract class AbstractJobHandlingTest {
+    
+      @Inject protected EventAdmin eventAdmin;
+
+      @Inject protected ConfigurationAdmin configAdmin;
+
+      @Inject protected BundleContext bc;
+    
+      @Configuration public Option[] config() {
+        return options(
+          frameworkProperty("sling.home").value(new File(...),
+          mavenBundle("org.apache.sling", "org.apache.sling.fragment.xml", "1.0.2"),
+          mavenBundle("org.apache.sling", "org.apache.sling.fragment.transaction", "1.0.0"),
+          mavenBundle("org.apache.sling", "org.apache.sling.fragment.activation", "1.0.2"),
+          mavenBundle("org.apache.sling", "org.apache.sling.fragment.ws", "1.0.2"),
+
+          mavenBundle("org.apache.sling", "org.apache.sling.commons.log", "4.0.0"),
+          mavenBundle("org.apache.sling", "org.apache.sling.commons.logservice", "1.0.2"),
+
+          mavenBundle("org.slf4j", "slf4j-api", "1.6.4"),
+          mavenBundle("org.slf4j", "jcl-over-slf4j", "1.6.4"),
+          mavenBundle("org.slf4j", "log4j-over-slf4j", "1.6.4"),
+
+          mavenBundle("commons-io", "commons-io", "1.4"),
+          mavenBundle("commons-fileupload", "commons-fileupload", "1.3.1"),
+          mavenBundle("commons-collections", "commons-collections", "3.2.1"),
+          mavenBundle("commons-codec", "commons-codec", "1.9"),
+          mavenBundle("commons-lang", "commons-lang", "2.6"),
+          mavenBundle("commons-pool", "commons-pool", "1.6"),
+
+          mavenBundle("org.apache.servicemix.bundles", "org.apache.servicemix.bundles.concurrent", "1.3.4_1"),
+
+    	  // SNIP ...
+    	  mavenBundle("org.apache.sling", "org.apache.sling.api", "2.8.0"),
+          mavenBundle("org.apache.sling", "org.apache.sling.settings", "1.3.4"),
+          mavenBundle("org.apache.sling", "org.apache.sling.resourceresolver", "1.1.6"),
+          mavenBundle("org.apache.sling", "org.apache.sling.adapter", "2.1.2"),
+		  // SNIP ...
+	}
+	
+Sling mocks with a JCR backend
+--
+
+`ResourceResolverType.JCR_MOCK` ?
+
+`JCR_OAK` or `JCR_JACKRABBIT` are also possible
+
+Server-side JUnit tests
+--
+
+    @RunWith(SlingAnnotationsTestRunner.class)
+    public class OsgiAwareTest {
+    
+      @TestReference private ConfigurationAdmin configAdmin;
+      @TestReference private BundleContext bundleContext;
+    
+      @Test public void testConfigAdmin() throws Exception {
+        assertNotNull( "Expecting ConfigurationAdmin to be injected by Sling test runner", configAdmin);        
+      }
+    }
+
+Actual code from [OsgiAwareTest](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/testing/samples/sample-tests/src/main/java/org/apache/sling/testing/samples/sampletests/OsgiAwareTest.java)
