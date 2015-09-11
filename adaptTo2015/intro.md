@@ -31,7 +31,7 @@ Unit testing
 --
 
 	@Test public void isNull() { 
-	  assertThat(StringUtils.isNull(null), is(true));
+	  assertThat( StringUtils.isNull( null ), is(true));
 	}
 	
 Integration testing
