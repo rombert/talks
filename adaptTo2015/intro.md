@@ -5,6 +5,20 @@ About the speaker
 * Long-time Open Source contributor
 * Working with Adobe on AEM
 
+<!--
+Hello everyone and thanks for joining. My name is Robert Munteanu and this
+is 'How do I test my Sling Application'..
+
+A few words about myself - I am a PMC member in the Apache Sling project and
+long-time Open Source contributor.
+
+Also, I have been working for almost 4 years with Adobe in Romania on AEM.
+So yes, it was still called CQ back then :-)
+
+And obviously I care a lot about testing and code quality and this is why
+I'm here. 
+-->
+
 Agenda
 ---------
 
@@ -12,20 +26,33 @@ Agenda
 * What about Sling?
 * Demo
 
+
+<!--
+First of all, to discuss how to test a Sling application we should quickly look
+at how do we usually test an application and then extend these concepts to Sling.
+
+Then we take these concepts and map them in detail to Apache Sling.
+
+And in the end, should we have the time, we'll briefly look at a demo. The
+slides contain a lot of code so it won't be an issue if we don't get to the
+actual demo.  
+-->
+
+Speaker.getInstance().interrupt()
+===
+
+
+<!--
+Yes, please interrupt me whenever you have question or comment to make.
+-->
+
 How do I test my application?
 ===
 
-Tools of the trade
----
-
-* Unit testing
-* Integration testing
-* End-to-End testing
-
-The testing pyramid
---
-
-![Testing pyramid](assets/original/automatedtestingpyramid.png)
+<!-- 
+Now that that's done with, let's get on with the concepts about testing
+applications in general.
+--> 
 
 Unit testing
 --
@@ -34,7 +61,16 @@ Unit testing
 	  assertThat( StringUtils.isNull( null ), is(true));
 	}
 	
-Integration testing
+<!--
+The first form of testing is of course unit testing. Unit tests should be
+small, fast and self-contained. Unit tests validate that a unit - typically
+a Java class works well in isolation.
+
+This more or less applies to the 'Utils' family of classes, which don't collaborate
+heavily. Which means that in projects you don't see this a lot.
+-->
+	
+Unit testing with mocks
 --
  
     @Test public void persist() {
@@ -42,16 +78,111 @@ Integration testing
       MyService service = new MyService(dao);
       service.persist(new ServiceObject()); // must not fail
     }
+    
+<!--
+And then comes a time when you want to test a class which has
+collaborators. A typical example in a database-backed application is testing
+a service which uses a data access object. This trivial example shows how it
+would look like.
+
+Two points to note here:
+
+1. Mock-based tests work against a contract and not an implementation. In here
+we expect the data access object to behave in a certain way and we specify its
+behaviour in the test.
+
+2. Mock-based tests are still small, fast and self-contained. They do tend to
+become a bit more verbose than 'plain' unit tests, but are still manageable.
+-->
+    
+Integration testing
+--
+ 
+    @Test public void persist() {
+      MyDao dao = new MyRealDao(/* config */);
+      MyService service = new MyService(dao);
+      service.persist(newServiceObject()); // must not fail
+    }    
+
+<!--
+Integration tests, well, test integration between components. The two main 
+differences between mock-based unit tests and integration tests are:
+
+1. Integration tests are slower and typically require state management. In our example
+we need to care whether MyRealDao persists its state or not, since that makes test
+runs unreproducible. If newServiceObject() returns an identical object every time
+a foreign key constraint violation might be thrown, so we need to ensure a clean slate ...
+-->
+
+Integration testing - clean slate
+--
+ 
+    @Before public void ensureCleanSlate() {
+      MyDao dao = new MyRealDao(/* config */);
+	  dao.deleteAll();
+    }
+    
+<!--
+Which we typically do with something like this - before running the test ensure
+that we have no previous state. Of course, this can quickly get complicated
+if you have multiple related entities so sometimes you simply do a drop/create
+of the database. Which is obviously slower.
+
+2. Mock-based tests work against a contract and not an implementation. In here
+we expect the data access object to behave in a certain way and we specify its
+behaviour in the test.
+-->
 
 End-to-end testing
 --
 
     @Test public void login() {
-      Client client = new MyAppHttpClient();
+      Client client = new MyBrowserBasedClient();
       AuthResult result = client.login("admin", "admin");
       assertThat(result.isLoggedIn(), is(true));
     }
     
+<!--
+In the end ( no pun intended ) we have the big, bad, heavy, test-all end-to-end
+tests. These typically simulate end-user interaction and exercise the complete
+application in a realistic deployment scenario.
+
+There's no point in wondering there these tests are self-contained - they test
+everything - from user interface to database access to how components are
+wired. They are also the slowest of the bunch and definitely not isolated. And
+from my personal experience they're quite flaky and require maintenance.
+
+All of this has subtly build to a recommendation regarding organising tests
+for an application...
+-->
+
+The testing pyramid ...
+--
+
+*TODO* - change to using pyramid with my tests
+
+![Testing pyramid](assets/original/automatedtestingpyramid.png)
+
+<!--
+Some of you might be familiar with the testing pyramid. The basic idea is to 
+have most of your tests be fast tests, basically unit tests. This way
+you can get immediate feedback, since a large unit test battery can be quickly
+executed by a developer on his local workstation - no setup needed, no flakiness.
+
+Of course, you should test interactions and confirm that a complete setup
+works, but you're better server by a large batter of unit tests handling every
+variation.
+
+Otherwise you end up with...
+-->
+
+... or the testing icecream? 
+-
+
+*TODO* - change to using ice cream cone with my tests
+
+![ice cream cone](assets/scaled/softwaretestingicecreamconeantipattern.png)
+
 Testing tools galore
 --
 
@@ -362,8 +493,3 @@ Final thoughts
 * Sling provides a lot of specialised testing tools
 * Lots of effort recently invested in the unit testing layer
 * Experiment and provide feedback
-
-And ensure your tests are properly structured 
--
-
-![ice cream cone](assets/scaled/softwaretestingicecreamconeantipattern.png)
