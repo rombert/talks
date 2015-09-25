@@ -29,7 +29,7 @@ Agenda
 
 <!--
 First of all, to discuss how to test a Sling application we should quickly look
-at how do we usually test an application and then extend these concepts to Sling.
+at how do we usually test an application.
 
 Then we take these concepts and map them in detail to Apache Sling.
 
@@ -128,9 +128,8 @@ that we have no previous state. Of course, this can quickly get complicated
 if you have multiple related entities so sometimes you simply do a drop/create
 of the database. Which is obviously slower.
 
-2. Mock-based tests work against a contract and not an implementation. In here
-we expect the data access object to behave in a certain way and we specify its
-behaviour in the test.
+2. Integration tests works against the implementation, so they may uncover issues
+which arise from the difference between contract and implementation.
 -->
 
 End-to-end testing
@@ -159,9 +158,7 @@ for an application...
 The testing pyramid ...
 --
 
-*TODO* - change to using pyramid with my tests
-
-![Testing pyramid](assets/original/automatedtestingpyramid.png)
+![Testing pyramid](assets/scaled/testing-pyramid.png)
 
 <!--
 Some of you might be familiar with the testing pyramid. The basic idea is to 
@@ -170,28 +167,33 @@ you can get immediate feedback, since a large unit test battery can be quickly
 executed by a developer on his local workstation - no setup needed, no flakiness.
 
 Of course, you should test interactions and confirm that a complete setup
-works, but you're better server by a large batter of unit tests handling every
+works, but you're better served by a large battery of unit tests handling every
 variation.
 
 Otherwise you end up with...
 -->
 
-... or the testing icecream? 
+... or the testing icecream cone? 
 -
 
-*TODO* - change to using ice cream cone with my tests
-
-![ice cream cone](assets/scaled/softwaretestingicecreamconeantipattern.png)
+![Testing cone](assets/scaled/testing-cone.png)
 
 Testing tools galore
 --
 
 * Unit testing
     * Frameworks: JUnit, TestNG
+    * Assertions: AssertJ, Truth, fest-assert
     * Mocks: JMock, EasyMock, Mockito, Powermock
-* Integration testing: Spring Testing, WireMock, Dumbster
+* Integration testing: Spring Testing, WireMock, Dumbster, Arquilian
 * End-to-end testing: Selenium/WebDriver, REST-assured
-    
+
+<!--
+There are plenty of general-purpose of testing libraries, and also some special-purpose 
+developed by other projects.
+
+All serve their purpose well and often I find a number of them in Sling-based projects
+-->
 
 What about Sling?
 ======
@@ -202,6 +204,26 @@ Sling oddities^W particularities
 * OSGi
 * JCR
 * Sling APIs (Java, HTTP)
+
+<!--
+But of course, there's always room for more. Sling has some particularities regarding
+its technology stack and obviously these shape how the tests look and behave.
+
+First of all we have OSGi as a module and service layer. Typically in tests we care
+more about services than modules - the tooling around OSGi bundles is good enough for
+us not to care about validating that the imports and exports are right all the time.
+
+Right :-) ?
+
+Then comes JCR. JCR is pretty interesting here because it differs from how applications
+are structured - there are no ValueObjects or DataTransferObjects being passed to a Dao,
+every object is 'active'.
+
+And last of all, or rather on top of all that, comes Sling. Sling can be seen as both a 
+set of central APIs which appear in tests - the ResourceResolver and Adaptable interfaces
+come into mind and as various OSGi services that your code interacts with - 
+SlingSettingsService, Sling Jobs, discovery etc.
+-->
 
 Unit testing with Sling
 ==
@@ -215,6 +237,10 @@ Unit testing
     }
     
 Actual code from [AuthUtilTest.java](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/bundles/auth/core/src/test/java/org/apache/sling/auth/core/AuthUtilTest.java)
+
+<!--
+A very simple example of a unit test with no dependencies from the Sling code base
+-->
 
 Unit testing with ad-hoc mocking
 ---
@@ -233,6 +259,12 @@ Unit testing with ad-hoc mocking
 
 Actual code also from [AuthUtilTest.java](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/bundles/auth/core/src/test/java/org/apache/sling/auth/core/AuthUtilTest.java)
 
+<!--
+This time the tests needs to interact with a ResourceResolver and
+HttpServleRequest, so it mocks stuff. I've omitted the actual expectations since
+it takes too much space.
+-->
+
 Unit testing with Sling mocks
 ---
 
@@ -249,6 +281,11 @@ Unit testing with Sling mocks
     }
 
 Actual code from [ModelAdapterFactoryUtilTest.java](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/testing/mocks/sling-mock/src/test/java/org/apache/sling/testing/mock/sling/context/ModelAdapterFactoryUtilTest.java).
+
+<!--
+Another test, this time there is no framework-based mocking, but we're explicitly using a
+MockSlingHttpServletRequest ; 
+-->
     
 Unit testing OSGi code with Sling mocks
 ---
@@ -486,9 +523,23 @@ HTTP utilities from the Sling testing tools
         assertTrue("Location header must end with index.html", h.getValue().endsWith("index.html"));
       }
     }
+
+Code time
+==
+
+Slingshot?
+--
+
+![slingshots](assets/scaled/slingshots.jpg)
     
+Colophon
+--
+
+* Presentation crafted with Eclipse, GNU Make and odpdown
+* [Slingshots picture](https://www.flickr.com/photos/81325557@N00/8948946827) by _Anne and Tim_ on Flickr
+
 Final thoughts
--
+--
 
 * Sling provides a lot of specialised testing tools
 * Lots of effort recently invested in the unit testing layer
