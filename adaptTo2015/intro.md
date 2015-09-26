@@ -321,7 +321,19 @@ OSGi
 ![OSGi](assets/scaled/brick-wall.jpg)
 
 <!--
+Let me start by saying that I wholeheartedly, no-ifs-or-buts love OSGi. For the last four
+years I've used it for Java application I've written, and have not looked back.
 
+What I want to point out though is that while applications benefit greatly from OSGi, 
+in my humble opinion, unit tests are better served by different approaches.
+
+Consider the fact that the Sling Launchpad has around 110 bundles ; if you work with
+AEM then that number easily doubles. That's not a basis for a unit test. And most of
+the bundles directly or indirectly require the Sling repository to be available,
+which really adds to startup time.
+
+So while there are option which we can use for OSGi integration testing, at least
+for Sling apps, we need a different approach for unit testing.
 -->
 
 Unit testing OSGi code with Sling mocks
@@ -348,6 +360,19 @@ Unit testing OSGi code with Sling mocks
 
 Picked up from the [OSGi mocks documentation](https://sling.apache.org/documentation/development/osgi-mock.html).
 
+<!--
+What this piece of code shows is registering, activating, injecting OSGi services from a bundle, without
+having an OSGi framework available.
+
+There are no bundle lists to construct, no private fields injection to satisfy dependencies, it's all done behind
+the scenes by Sling Mocks. This opens up a lot of interesting possibilities regarding testing services in isolation,
+with test double components ( mocks or otherwise ).
+-->
+
+Sling OSGi mocks
+--
+
+TODO - a little picture or some concepts about how Sling mocks works
 
 The humble object pattern with OSGi
 ---
@@ -364,7 +389,7 @@ The humble object pattern with OSGi
 	
 	@Component
 	@Properties({ @Property(name="url") })
-	public class RouterAdminComponent implements RouterAdmin() {
+	public class RouterAdminComponent implements RouterAdmin {
 	  private RouterAdmin delegate;
 
       protected void activate(ComponentContext ctx) throws Exception {
