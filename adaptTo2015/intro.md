@@ -120,11 +120,12 @@ Unit testing with mocks
       service.persist(new ServiceObject());
     }
 
+<!--
 Another twist to mocking - since we are in charge of the collaborator's
 behaviour, we can simulate various conditions, like a collaborator
 throwing an unchecked exception since the dao is - for instance - not able to 
 connect to the data source. That can be tedious to arrange if not using mocks.
-
+-->
 
 Integration testing
 --
@@ -374,6 +375,12 @@ Sling OSGi mocks
 
 TODO - a little picture or some concepts about how Sling mocks works
 
+<!--
+
+- note : introduced by sseifert of provision
+
+-->
+
 The humble object pattern with OSGi
 ---
     public interface RouterAdmin {
@@ -403,10 +410,53 @@ The humble object pattern with OSGi
 
 See [Humble Object at xUnit patterns](http://xunitpatterns.com/Humble%20Object.html) for more details.
 
+<!--
+
+Here's an idea which I've been experimenting with at small scale, based on the Humble Object pattern.
+
+The idea behind this pattern is to extract the logic into a separate easy-to-test component
+that is decoupled from its environment. The two classic examples that are cited in favour
+of this pattern are asynchronous execution and UI objects. The underlying assumption is that
+there is something  in the environment that makes it hard to test the original objects. 
+
+So for instance if we have a UI object - a dialog - which we would like to test and that's hard to
+do with classical unit testing since it requires preparing the environment, having a UI available etc,
+so we extract all of the logic in a so-called humble object and then we test it in isolation.
+
+My assumption here is that assembling an OSGi environment for a unit test is 'hard', the same
+assumption that the OSGi mocks make. But instead of providing a mock OSGi environment, I try 
+to decouple the objects from OSGi. Turns out it's not really that hard, since most of what 
+we in the Sling world need from OSGi is the SCR and the Metatype service, and we use annotations for that.
+
+As you can see in the code, assuming that we have a RouterAdmin interface, we create two implementations:
+
+- the RouterAdminImpl which does the actual work - our so-called humble object 
+- the RouterAdminComponent, which is just the OSGi glue and then delegates all implemented methods
+  to the RouterAdminImpl
+  
+This allows us to test the RouterAdminImpl in isolation. And just as important, objects
+depending on the RouterAdmin don't know and don't care if they're talking to the OSGi component
+or the humble objects, which means that we can easily substitute something else during unit tests.
+-->
+
 JCR
 ---
 
 ![JCR](assets/scaled/oak-tree.jpg)
+
+<!--
+
+Then comes JCR. JCR is pretty interesting here because it has a different
+opinion no how persistence should be handled from an API points of view.
+You don't usually wirte create ValueObjects or DataTransferObjects
+which you pass to a DAO, every object is 'active'.
+
+A JCR node is very much an Active Record in the way Martin Fowler describes
+it in 'Patterns of Enterprise Application Architecture' as it is able to
+deal with persistence itself.
+
+So the patterns with mocking collaborating DAOs that we saw earlier do not apply.
+-->
 
 
 Testing JCR code with Sling mocks
@@ -435,10 +485,40 @@ Testing JCR code with Sling mocks
       }
     }
 
+Code taken from [FindResourceTest.java](https://github.com/apache/sling/blob/bc0f839fbcc18ea9d7f75ded51fdbc6ee0e05ba5/testing/mocks/sling-mock/src/test/java/org/apache/sling/testing/mock/sling/jcrmock/resource/FindResourcesTest.java).
+
+<!--
+The answer, again, is Sling mocks. Aside from providing a test OSGi-like environment,
+Sling mocks provides a number of ResourceResolver implementations out-of-the-box, which 
+allows you to work with a ResourceResolver without actually creating a full-fledged
+JCR repository, like Jackrabbit or Jackrabbit Oak.
+
+In this test we can see JCR_MOCK as a resource resolver type. This simulates a 
+simple JCR implementation, without the bells and whistles like observation, versioning,
+ACLs, etc. But you can get away with it is mostly do read-write operations, including queries.
+
+There's also a SLING_MOCK implementation, which you can use if you only work at the
+resource level.
+
+This example has some basic usage, creating resources in test, preparing query results
+and then validating that results are correct.
+--> 
+
 Sling
 --
 
 ![slingshots](assets/scaled/slingshots.jpg)
+
+<!--
+And last of all, or rather on top of all that, comes Sling. Sling can be seen as both a 
+set of central APIs which appear in tests - the ResourceResolver and Adaptable interfaces
+come into mind and as various OSGi services that your code interacts with - 
+SlingSettingsService, Sling Jobs, discovery etc.
+
+Also worth mentioning that for AEM there are also the AEM mocks which provide some
+stuff which is tailored for AEM use - they play nicely with the Sling mocks
+so look into them if you're testing against AEM.
+-->
 
 Sling Mocks for unit testing
 ---
@@ -468,6 +548,22 @@ Sling Mocks for unit testing
     
 Code from [SimpleNoSqlResourceProviderQueryTest](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/contrib/nosql/generic/src/test/java/org/apache/sling/nosql/generic/simple/SimpleNoSqlResourceProviderQueryTest.java)
 
+<!--
+Not suprisingly, it's also Sling Mocks here. If we can test OSGi and JCR with Sling Mocks, we
+can definitely test any Sling code. But on top of that, Sling Mocks also registers some
+services out-of-the box:
+
+- AdapterManager
+- SlingSettingsService
+- MimeTypeService
+- ModelAdapterFactory
+
+and also provides other utilities
+
+- ContentLoader for loading data from JSON into the repository
+- Mock objects for request handling
+- ContentBuilder for programmatic resource creation
+
 Sling Mocks for unit testing
 ---
 
@@ -485,98 +581,139 @@ Integration testing with Sling
 Pax-Exam
 --
 
-    public abstract class AbstractJobHandlingTest {
-    
-      @Inject protected EventAdmin eventAdmin;
+    public static Option[] paxConfig() {
+        final File thisProjectsBundle = new File(System.getProperty( "bundle.file.name", "BUNDLE_FILE_NOT_SET" ));
+        final String launchpadVersion = System.getProperty("sling.launchpad.version", "LAUNCHPAD_VERSION_NOT_SET");
+        log.info("Sling launchpad version: {}", launchpadVersion);
+        return new DefaultCompositeOption(
+                SlingPaxOptions.defaultLaunchpadOptions(launchpadVersion),
+                CoreOptions.provision(CoreOptions.bundle(thisProjectsBundle.toURI().toString()))
+                
+        ).getOptions();
+    }
+	
+Taken from [U.java](https://github.com/apache/sling/blob/bc0f839fbcc18ea9d7f75ded51fdbc6ee0e05ba5/bundles/commons/contentdetection/src/test/java/org/apache/sling/commons/contentdetection/internal/it/U.java)
 
-      @Inject protected ConfigurationAdmin configAdmin;
+<!--
+Traditionally one of the complicated things with setting up Pax-Exam for Sling was 
+putting together the bundle list, which is now made very simple by the SlingPaxOptions
+class. This provisions a Sling Launchpad with all the needed bundles so you 
+don't have to keep the list up-to-date.
+-->
 
-      @Inject protected BundleContext bc;
-    
+Pax-Exam
+--
+
+
+	@RunWith(PaxExam.class) public class FileNameExtractorImplIT {
+
+      @Inject private FileNameExtractor fileNameExtractor;
+
+      @Test public void testFileNameExtractor(){
+        String rawPath = "http://midches.com/images/uploads/default/demo.jpg#anchor?query=test";
+        String expectedFileName = "demo.jpg";
+        assertEquals(expectedFileName, fileNameExtractor.extract(rawPath));
+      }
+
       @Configuration public Option[] config() {
-        return options(
-          frameworkProperty("sling.home").value(new File(...),
-          mavenBundle("org.apache.sling", "org.apache.sling.fragment.xml", "1.0.2"),
-          mavenBundle("org.apache.sling", "org.apache.sling.fragment.transaction", "1.0.0"),
-          mavenBundle("org.apache.sling", "org.apache.sling.fragment.activation", "1.0.2"),
-          mavenBundle("org.apache.sling", "org.apache.sling.fragment.ws", "1.0.2"),
+        return U.paxConfig();
+      }
+    }
 
-          mavenBundle("org.apache.sling", "org.apache.sling.commons.log", "4.0.0"),
-          mavenBundle("org.apache.sling", "org.apache.sling.commons.logservice", "1.0.2"),
+Taken from [FileNameExtractorImplIT.java](https://github.com/apache/sling/blob/bc0f839fbcc18ea9d7f75ded51fdbc6ee0e05ba5/bundles/commons/contentdetection/src/test/java/org/apache/sling/commons/contentdetection/internal/it/FileNameExtractorImplIT.java).
 
-          mavenBundle("org.slf4j", "slf4j-api", "1.6.4"),
-          mavenBundle("org.slf4j", "jcl-over-slf4j", "1.6.4"),
-          mavenBundle("org.slf4j", "log4j-over-slf4j", "1.6.4"),
-
-          mavenBundle("commons-io", "commons-io", "1.4"),
-          mavenBundle("commons-fileupload", "commons-fileupload", "1.3.1"),
-          mavenBundle("commons-collections", "commons-collections", "3.2.1"),
-          mavenBundle("commons-codec", "commons-codec", "1.9"),
-          mavenBundle("commons-lang", "commons-lang", "2.6"),
-          mavenBundle("commons-pool", "commons-pool", "1.6"),
-
-          mavenBundle("org.apache.servicemix.bundles", "org.apache.servicemix.bundles.concurrent", "1.3.4_1"),
-
-    	  // SNIP ...
-    	  mavenBundle("org.apache.sling", "org.apache.sling.api", "2.8.0"),
-          mavenBundle("org.apache.sling", "org.apache.sling.settings", "1.3.4"),
-          mavenBundle("org.apache.sling", "org.apache.sling.resourceresolver", "1.1.6"),
-          mavenBundle("org.apache.sling", "org.apache.sling.adapter", "2.1.2"),
-		  // SNIP ...
-	}
+<!--
+And then this utility class can be reused in as many tests as you would like.
+Simple and concise.
+-->
 	
 Sling mocks with a JCR backend
 --
 
-`ResourceResolverType.JCR_MOCK` ?
+* Unit testing with JCR Mocks
+  * JCR_MOCK
+  * SLING_MOCK
+* Integration testing with JCR Mocks
+  * JCR_JACKRABBIT
+  * JCR_OAK
 
-`JCR_OAK` or `JCR_JACKRABBIT` are also possible
+<!--
+I previously mentioned that there are multiple resource resolver types implemented 
+in the Sling mocks. JCR_MOCK and SLING_MOCK are fast, in-memory, implementations
+used for unit testing.
+
+But for integration testing you probably want a real JCR repository. And that's
+where JCR_JACKRABBIT and JCR_OAK come in. No surprises here, JCR_JACKRABBIT
+starts a Jackrabbit 2.x respository while OAK starts an Oak 1.2.x repository.
+
+You can keep the same test cases and switch from one resource resolver type
+to another and they should work the same.
+-->
 
 Server-side JUnit tests
 --
 
-    @RunWith(SlingAnnotationsTestRunner.class)
-    public class OsgiAwareTest {
+    public class ServerSideInstallerTest {
     
-      @TestReference private ConfigurationAdmin configAdmin;
-      @TestReference private BundleContext bundleContext;
+      @Rule public final TeleporterRule teleporter = TeleporterRule.forClass(getClass(), "Launchpad");
+
+      @Before
+      public void setup() throws LoginException {
+        ip = teleporter.getService(InfoProvider.class);
+        is = ip.getInstallationState();
+      }
     
-      @Test public void testConfigAdmin() throws Exception {
-        assertNotNull( "Expecting ConfigurationAdmin to be injected by Sling test runner", configAdmin);        
+      @Test
+      public void noUntransformedResources() {
+        final List<?> utr = is.getUntransformedResources();
+        if(utr.size() > 0) {
+            fail("Untransformed resources found: " + utr); 
+        }
       }
     }
 
-Actual code from [OsgiAwareTest](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/testing/samples/sample-tests/src/main/java/org/apache/sling/testing/samples/sampletests/OsgiAwareTest.java)
+<!--
+The sling testing tools allow you to deploy test code straight into a running Sling instance,
+executing them and retrieving the results.
+
+We do this by simply teleporting the code from the test workspace to the running instance.
+If you want to know more about this magic, ask Bertrand.
+
+Some key points here:
+
+- we have a TeleporterRule which does most of the work, making sure that the instance is set up
+  ( the "Launchpad" argument points to a customiser which handles some of that )
+  and a bundle is built on the fly and then deployed to the running instance,
+  a test executed and the results retrieved
+- the TeleporterRule can access OSGi services, so basically everything is available to you
+
+It's a nice complement to Pax-testing, for the situations where you prefer to provision your
+launchpad instance in a different manner.
+
+And also has the coolest name that I know of for a testing tool. Ok, Mockito comes close, but
+this is better :-) 
+-->
 
 
 Scriptable server-side tests
 ---
 
-	%><sling:defineObjects/><%
+	// test imports that fail on Java 8, SLING-3405
+	
+	%><%@page import="java.util.Arrays"%><%
+	%><%@page import="java.lang.CharSequence"%><%
+	%>TEST_PASSED
 
-    // we don't check for null etc to make the test fail if the service is not available!
-    final InfoProvider ip = sling.getService(InfoProvider.class);
-    final InstallationState is = ip.getInstallationState();
 
-    String output = "";
+Actual code from [installer-duplicate.jsp](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/launchpad/integration-tests/src/main/resources/scripts/sling-it/imports.jsp).
 
-    // check 01 : no untransformed resources
-    if ( is.getUntransformedResources().size() > 0 ) {
-        output += "Untransformed resources: " + is.getUntransformedResources() + "\n";
-    }
+<!--
+You can execute scripts as tests. The mechanism is very simple - you only need to output
+TEST_PASSED and the test passes. I would recommend using these tests only when you
+have core scripting functionality  to test ; otherwise the TeleporterRule is very
+much preferred.
+-->
 
-    // check 02 : no active resources
-    if ( is.getActiveResources().size() > 0 ) {
-        output += "Active resources: " + is.getActiveResources() + "\n";
-    }
-    if ( output.length() > 0 ) {
-        %><%= output %><%
-    } else {
-        %>TEST_PASSED<%
-    }
-	%>
-
-Actual code from [installer-duplicate.jsp](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/launchpad/integration-tests/src/main/resources/scripts/sling-it/installer-duplicate.jsp).
 
 End-to-end testing with Sling
 ==
@@ -598,6 +735,8 @@ HTTP utilities from the Sling testing tools
       }
     }
 
+And finally, if you are looking to write some end-to-end tests, 
+
 Code time
 ==
 
@@ -605,6 +744,18 @@ Slingshot
 --
 
 ![Demo](assets/scaled/code.jpg)
+
+<!--
+Slingshot is one of the samples from the Sling source tree. It's basically a photo-sharing application,
+you can launch it easily into the default launchpad to see some more details. But what I want to do now is to 
+show you some Sling Mocks-based tests so you can get the feel of the complete setup.
+
+- pom.xml setup - careful about ordering, note about SNAPSHOTS
+- a OSGi-only test
+- JCR_MOCK/SLING_MOCK test
+- JCR_JACKRABBIT test
+
+-->
     
 Colophon
 --
@@ -613,7 +764,6 @@ Colophon
 * Photo credits
   * [Slingshots](https://www.flickr.com/photos/81325557@N00/8948946827) by _Anne and Tim_ on Flickr
   * [Wall](https://www.flickr.com/photos/bartoszjanusz/6344746584/) by _Bart Lumber_ on Flickr
-  * [Oak (May)](https://www.flickr.com/photos/robwatling/3500885002) by _Rob Watling_ on Flickr
   * [HTML code](https://www.flickr.com/photos/nikio/3899114449) by _Marjan Krebelj_ on Flickr
 
 Final thoughts
@@ -622,3 +772,12 @@ Final thoughts
 * Sling provides a lot of specialised testing tools
 * Lots of effort recently invested in the unit testing layer
 * Experiment and provide feedback
+
+Resources
+--
+
+* Sling mocks
+* AEM mocks
+* Slingshot
+
+And also the links spread throughout the presentation.
