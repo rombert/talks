@@ -37,12 +37,13 @@ And in the end, we'll take a little time to look at an actual demo of putting th
 and concepts I've discussed in action.
 -->
 
-Speaker.getInstance().interrupt()
+questionQueue.add(anyQuestion());
 ===
 
 
 <!--
-Yes, please interrupt me whenever you have question or comment to make.
+Since there's quite a large audience please take a note of
+any questions and ask in the Q&A section.
 -->
 
 How do I test my application?
@@ -342,11 +343,9 @@ Unit testing OSGi code with Sling mocks
 
 	public class ExampleTest {
 	
-	  @Rule
-	  public final OsgiContext context = new OsgiContext();
+	  @Rule public final OsgiContext context = new OsgiContext();
 	
-	  @Test
-	  public void testSomething() {
+	  @Test public void testSomething() {
 	
 	    // register and activate service
 	    MyService service1 = context.registerInjectActivateService(new MyService(),
@@ -354,9 +353,7 @@ Unit testing OSGi code with Sling mocks
 	
 	    // get service instance
 	    OtherService service2 = context.getService(OtherService.class);
-	
 	  }
-	
 	}
 
 Picked up from the [OSGi mocks documentation](https://sling.apache.org/documentation/development/osgi-mock.html).
@@ -370,14 +367,19 @@ the scenes by Sling Mocks. This opens up a lot of interesting possibilities rega
 with test double components ( mocks or otherwise ).
 -->
 
-Sling OSGi mocks
+Sling mocks
 --
 
-TODO - a little picture or some concepts about how Sling mocks works
+* donated to the Sling project in Octomber 2014 by Stefan Seifert
+* focus on running Apache Sling in an in-memory environment suitable for unit tests
 
 <!--
 
-- note : introduced by sseifert of provision
+The Sling mocks are a relatively recent addition to the Sling project. They are in the 'good-fidelity/excellent speed' 
+unit tests area.
+
+They don't aim to perfectly mimic the frameworks that they are mocking, but instead to get a 'good-enough' setup
+for unit tests running.
 
 -->
 
@@ -389,13 +391,10 @@ The humble object pattern with OSGi
 	
 	public class RouterAdminImpl implements RouterAdmin {
 	  // constructor and field elided 
-      public void doStuff() {
-	    // implementation
-	  }
+      public void doStuff() { // implementation }
 	}
 	
-	@Component
-	@Properties({ @Property(name="url") })
+	@Component @Properties({ @Property(name="url") })
 	public class RouterAdminComponent implements RouterAdmin {
 	  private RouterAdmin delegate;
 
@@ -407,8 +406,6 @@ The humble object pattern with OSGi
         delegate.doStuff();
       }
 	}
-
-See [Humble Object at xUnit patterns](http://xunitpatterns.com/Humble%20Object.html) for more details.
 
 <!--
 
@@ -563,6 +560,8 @@ and also provides other utilities
 - ContentLoader for loading data from JSON into the repository
 - Mock objects for request handling
 - ContentBuilder for programmatic resource creation
+
+-->
 
 Sling Mocks for unit testing
 ---
@@ -735,7 +734,12 @@ HTTP utilities from the Sling testing tools
       }
     }
 
-And finally, if you are looking to write some end-to-end tests, 
+Code taken from [HttpPingTest.java](https://github.com/apache/sling/blob/05352b46fbb54c3e7f03b6a59462e8fa64ec633c/launchpad/integration-tests/src/main/java/org/apache/sling/launchpad/webapp/integrationtest/HttpPingTest.java)
+
+<!--
+And finally, if you are looking to write some end-to-end tests, the Apache Sling Testing Utilities
+module does have support classes for running HTTP-based tests.
+--> 
 
 Code time
 ==
@@ -772,12 +776,19 @@ Final thoughts
 * Sling provides a lot of specialised testing tools
 * Lots of effort recently invested in the unit testing layer
 * Experiment and provide feedback
+* Contributions are definitely welcomed
 
 Resources
 --
 
-* Sling mocks
-* AEM mocks
-* Slingshot
+* Sling mocks - https://sling.apache.org/documentation/development/sling-mock.html
+* AEM mocks - http://wcm.io/testing/aem-mock/
+* Slingshot - http://svn.apache.org/repos/asf/sling/trunk/samples/slingshot/
+* Humble object pattern - http://xunitpatterns.com/Humble%20Object.html
 
 And also the links spread throughout the presentation.
+
+Q&A
+--
+
+![Q&A](assets/scaled/questions-cube.jpg)
