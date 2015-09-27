@@ -114,7 +114,8 @@ become a bit more verbose than 'plain' unit tests, but are still manageable.
 Unit testing with mocks
 --
  
-    @Test(expected=ServiceException.class) public void persist() {
+    @Test(expected=ServiceException.class)
+    public void persist() {
       MyDao dao = mock(MyDao.class);
       MyService service = new MyService(dao);
       when(dao.persist(anyObject)).thenThrow(new DaoUnavailableException("mocked"));
@@ -573,6 +574,29 @@ Sling Mocks for unit testing
 
 ![Unit testing execution time](assets/original/nosql-unit-test-execution-time-magnified.png)
 
+Hamcrest matchers
+--
+
+    @Test public void loadResources() {
+
+      Map<String, Object> expectedProperties = /* define properties */;
+      Resource resource = /* load resource */ null;
+
+      assertThat(resource, resourceOfType("my/app"));
+      assertThat(resource, hasChildren("header", "body"));
+      assertThat(resource, resourceWithProps(expectedProperties));    
+    }
+
+Taken from the [Hamcrest integration documentation](http://sling.apache.org/documentation/development/hamcrest.html).
+
+<!--
+When writing unit tests there are many ways of asserting. Obviously you can get away with using assertTrue(condition)
+but that's not a very good idea. Custom assertions clarify the contract and make sure exactly what part
+of the condition failed.
+
+I have recently added this module to SVN, there is no release yet - plan to do so the next week, but feel tree
+to try out and ask for more stuff.
+-->
 
 Integration testing with Sling
 ==
@@ -755,9 +779,9 @@ you can launch it easily into the default launchpad to see some more details. Bu
 show you some Sling Mocks-based tests so you can get the feel of the complete setup.
 
 - pom.xml setup - careful about ordering, note about SNAPSHOTS
-- a OSGi-only test
-- JCR_MOCK/SLING_MOCK test
-- JCR_JACKRABBIT test
+- a OSGi-only test - RatingPostServletTest
+- JCR_MOCK/SLING_MOCK test - RatingServiceImplTest
+- JCR_JACKRABBIT test - SetupServiceTest
 
 -->
     
@@ -769,6 +793,8 @@ Colophon
   * [Slingshots](https://www.flickr.com/photos/81325557@N00/8948946827) by _Anne and Tim_ on Flickr
   * [Wall](https://www.flickr.com/photos/bartoszjanusz/6344746584/) by _Bart Lumber_ on Flickr
   * [HTML code](https://www.flickr.com/photos/nikio/3899114449) by _Marjan Krebelj_ on Flickr
+  * [Foggy Oak Tree](Foggy Oak Tree) by _Brett Whaley_ on Flickr
+* Testing pyramid and ice-cream cone concepts courtesy of [watirmelon.com](http://watirmelon.com/)
 
 Final thoughts
 --
@@ -781,12 +807,10 @@ Final thoughts
 Resources
 --
 
-* Sling mocks - https://sling.apache.org/documentation/development/sling-mock.html
-* AEM mocks - http://wcm.io/testing/aem-mock/
-* Slingshot - http://svn.apache.org/repos/asf/sling/trunk/samples/slingshot/
-* Humble object pattern - http://xunitpatterns.com/Humble%20Object.html
-
-And also the links spread throughout the presentation.
+* https://sling.apache.org/documentation/development/sling-mock.html
+* http://wcm.io/testing/aem-mock/
+* http://svn.apache.org/repos/asf/sling/trunk/samples/slingshot/
+* http://xunitpatterns.com/Humble%20Object.html
 
 Q&A
 --
