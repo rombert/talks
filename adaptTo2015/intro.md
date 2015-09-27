@@ -784,17 +784,6 @@ show you some Sling Mocks-based tests so you can get the feel of the complete se
 - JCR_JACKRABBIT test - SetupServiceTest
 
 -->
-    
-Colophon
---
-
-* Presentation crafted with Eclipse, GNU Make and [odpdown](https://github.com/thorstenb/odpdown)
-* Photo credits
-  * [Slingshots](https://www.flickr.com/photos/81325557@N00/8948946827) by _Anne and Tim_ on Flickr
-  * [Wall](https://www.flickr.com/photos/bartoszjanusz/6344746584/) by _Bart Lumber_ on Flickr
-  * [HTML code](https://www.flickr.com/photos/nikio/3899114449) by _Marjan Krebelj_ on Flickr
-  * [Foggy Oak Tree](Foggy Oak Tree) by _Brett Whaley_ on Flickr
-* Testing pyramid and ice-cream cone concepts courtesy of [watirmelon.com](http://watirmelon.com/)
 
 Final thoughts
 --
@@ -811,6 +800,17 @@ Resources
 * http://wcm.io/testing/aem-mock/
 * http://svn.apache.org/repos/asf/sling/trunk/samples/slingshot/
 * http://xunitpatterns.com/Humble%20Object.html
+
+Colophon
+--
+
+* Presentation crafted with Eclipse, GNU Make and [odpdown](https://github.com/thorstenb/odpdown)
+* Photo credits
+  * [Slingshots](https://www.flickr.com/photos/81325557@N00/8948946827) by _Anne and Tim_ on Flickr
+  * [Wall](https://www.flickr.com/photos/bartoszjanusz/6344746584/) by _Bart Lumber_ on Flickr
+  * [HTML code](https://www.flickr.com/photos/nikio/3899114449) by _Marjan Krebelj_ on Flickr
+  * [Foggy Oak Tree](Foggy Oak Tree) by _Brett Whaley_ on Flickr
+* Testing pyramid and ice-cream cone concepts courtesy of [watirmelon.com](http://watirmelon.com/)
 
 Q&A
 --
