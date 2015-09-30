@@ -5,7 +5,7 @@ About the speaker
 * Long-time Open Source contributor
 * Working with Adobe on AEM
 
-<!--
+~~~Comment
 Hello everyone and thanks for joining. My name is Robert Munteanu and this
 is 'How do I test my Sling Application'..
 
@@ -17,7 +17,7 @@ So yes, it was still called CQ back then :-)
 
 And obviously I care a lot about testing and code quality and this is why
 I'm here. 
--->
+~~~
 
 Agenda
 ---------
@@ -27,7 +27,7 @@ Agenda
 * Demo
 
 
-<!--
+~~~Comment
 First of all, to discuss how to test a Sling application we should quickly look
 at how do we usually test web-based, data-driven applications.
 
@@ -35,16 +35,16 @@ Then we take these concepts and map them in detail to Apache Sling.
 
 And in the end, we'll take a little time to look at an actual demo of putting the tools
 and concepts I've discussed in action.
--->
+~~~
 
 questionQueue.add(anyQuestion());
 ===
 
 
-<!--
+~~~Comment
 Since there's quite a large audience please take a note of
 any questions and ask in the Q&A section.
--->
+~~~
 
 How do I test my application?
 ===
