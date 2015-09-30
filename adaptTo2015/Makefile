@@ -1,5 +1,5 @@
 SLIDES=intro.md
-TEMPLATE=adaptTo2015_PresentationTemplate_trimmed.odp
+TEMPLATE=templates/adaptTo2015_PresentationTemplate_trimmed.odp
 OUTPUT=How_Do_I_Test_My_Sling_Application-Robert_Munteanu_unedited.odp
 ODPDOWN=../tools/odpdown
 .PHONY=clean
