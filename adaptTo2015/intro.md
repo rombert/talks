@@ -1,10 +1,6 @@
 About the speaker
 -------------------
 
-* Apache Sling PMC member
-* Long-time Open Source contributor
-* Working with Adobe on AEM
-
 ~~~Comment
 Hello everyone and thanks for joining. My name is Robert Munteanu and this
 is 'How do I test my Sling Application'..
@@ -19,13 +15,13 @@ And obviously I care a lot about testing and code quality and this is why
 I'm here. 
 ~~~
 
+
+* Apache Sling PMC member
+* Long-time Open Source contributor
+* Working with Adobe on AEM
+
 Agenda
 ---------
-
-* How do I test my application?
-* What about Sling?
-* Demo
-
 
 ~~~Comment
 First of all, to discuss how to test a Sling application we should quickly look
@@ -36,6 +32,11 @@ Then we take these concepts and map them in detail to Apache Sling.
 And in the end, we'll take a little time to look at an actual demo of putting the tools
 and concepts I've discussed in action.
 ~~~
+
+
+* How do I test my application?
+* What about Sling?
+* Demo
 
 questionQueue.add(anyQuestion());
 ===
@@ -50,7 +51,7 @@ How do I test my application?
 ===
 
 
-<!--
+~~~Comment
 For the purpose of this talk, I will only consider automatic testing of functionality. So no exploratory
 testing, no performance testing, no UI-based testing.
 
@@ -60,16 +61,12 @@ applications don't differ that much from other applications in order to justify 
 
 Now that that's done with, let's get on with the concepts about testing
 applications in general, to make sure that everyone is on the same page.
--->
+~~~
 
 Unit testing
 --
 
-	@Test public void isNull() { 
-	  assertThat( StringUtils.isNull( null ), is(true));
-	}
-	
-<!--
+~~~Comment
 The first form of testing is of course unit testing. Unit tests should be
 small, fast and self-contained. These tests validate that a unit - typically
 a Java class works well in isolation.
@@ -78,18 +75,17 @@ This more or less applies to the 'Utils' family of classes, which don't collabor
 a lot. Which means that in application projects, as opposed to library projects, you
 see a small proportion of these tests. In application projects most objects do have
 collaborators.
--->
-	
+~~~
+
+
+	@Test public void isNull() { 
+	  assertThat( StringUtils.isNull( null ), is(true));
+	}
+		
 Unit testing with mocks
 --
  
-    @Test public void persist() {
-      MyDao dao = mock(MyDao.class);
-      MyService service = new MyService(dao);
-      service.persist(new ServiceObject()); // must not fail
-    }
-
-<!--
+~~~Comment
 And that obviously leads us to a well-known variation of unit test - a unit test
 using mocks. Assuming that we have a database-backed application we can test
 a service which uses a data access object. 
@@ -109,11 +105,24 @@ the dao was called. But this is all us assuming that we know how the collaborato
 
 2. Mock-based tests are still small, fast and self-contained. They do tend to
 become a bit more verbose than 'plain' unit tests, but are still manageable.
--->
+~~~
+ 
+    @Test public void persist() {
+      MyDao dao = mock(MyDao.class);
+      MyService service = new MyService(dao);
+      service.persist(new ServiceObject()); // must not fail
+    }
 
 Unit testing with mocks
 --
- 
+
+~~~Comment
+Another twist to mocking - since we are in charge of the collaborator's
+behaviour, we can simulate various conditions, like a collaborator
+throwing an unchecked exception since the dao is - for instance - not able to 
+connect to the data source. That can be tedious to arrange if not using mocks.
+~~~
+
     @Test(expected=ServiceException.class)
     public void persist() {
       MyDao dao = mock(MyDao.class);
@@ -122,23 +131,10 @@ Unit testing with mocks
       service.persist(new ServiceObject());
     }
 
-<!--
-Another twist to mocking - since we are in charge of the collaborator's
-behaviour, we can simulate various conditions, like a collaborator
-throwing an unchecked exception since the dao is - for instance - not able to 
-connect to the data source. That can be tedious to arrange if not using mocks.
--->
-
 Integration testing
 --
- 
-    @Test public void persist() {
-      MyDao dao = new MyRealDao(/* config */);
-      MyService service = new MyService(dao);
-      service.persist(newServiceObject()); // must not fail
-    }    
 
-<!--
+~~~Comment
 Integration tests, well, test integration between components. The two main 
 differences between mock-based unit tests and integration tests are:
 
@@ -147,17 +143,19 @@ differences between mock-based unit tests and integration tests are:
 In our example we need to care whether MyRealDao persists its state or not, since that makes test
 runs different. If newServiceObject() returns an identical object every time
 a foreign key constraint violation might be thrown, so we need to ensure a clean slate ...
--->
+~~~
+ 
+    @Test public void persist() {
+      MyDao dao = new MyRealDao(/* config */);
+      MyService service = new MyService(dao);
+      service.persist(newServiceObject()); // must not fail
+    }    
+
 
 Integration testing - clean slate
 --
- 
-    @Before public void ensureCleanSlate() {
-      MyDao dao = new MyRealDao(/* config */);
-	  dao.deleteAll();
-    }
-    
-<!--
+
+~~~Comment
 Which we typically do with something like this - before running the test ensure
 that we have no previous state. Of course, this can quickly get complicated
 if you have multiple related entities so sometimes you simply do a drop/create
@@ -165,18 +163,17 @@ of the database. Which is obviously slower.
 
 2. Integration tests works against the implementation, so they may uncover issues
 which arise from the difference between contract and implementation.
--->
+~~~ 
+
+    @Before public void ensureCleanSlate() {
+      MyDao dao = new MyRealDao(/* config */);
+	  dao.deleteAll();
+    }
 
 End-to-end testing
 --
 
-    @Test public void login() {
-      Client client = new MyBrowserBasedClient();
-      AuthResult result = client.login("admin", "admin");
-      assertThat(result.isLoggedIn(), is(true));
-    }
-    
-<!--
+~~~Comment
 In the end ( no pun intended ) we have the big, bad, heavy, test-all end-to-end
 tests. These typically simulate end-user interaction and exercise the complete
 application in a realistic deployment scenario.
@@ -186,15 +183,18 @@ everything - from user interface to database access to how components are
 wired. They are also the slowest of the bunch and are most realistic measure
 of how your application will behave. And from my personal experience they're
 quite flaky and require maintenance.
+~~~
 
--->
-
+    @Test public void login() {
+      Client client = new MyBrowserBasedClient();
+      AuthResult result = client.login("admin", "admin");
+      assertThat(result.isLoggedIn(), is(true));
+    }
+    
 Testing pyramid
 --
 
-![Testing pyramid](assets/scaled/testing-pyramid.png)
-
-<!--
+~~~Comment
 So since you have all of these kinds of tests at your disposal, the question is
 which should I write. The answer is all of them. Of course, there is no easy way
 out. And then, the next question might come, where should I focus most of my effort.
@@ -212,14 +212,14 @@ much fewer integration or end-to-end tests compared to unit tests. So in terms o
 raw efficiency, unit tests win. And as the pyramid suggests, add some integration
 tests and some end-to-end tests to ensure that something doesn't slip by and you
 have a pretty solid test battery for your application.
--->
+~~~
+
+![Testing pyramid](assets/scaled/testing-pyramid.png)
 
 ... or the testing icecream cone? 
 -
 
-![Testing cone](assets/scaled/testing-cone.png)
-
-<!--
+~~~Comment
 Now this is something I've also seen done, with good and bad parts. This is considered
 an anti-pattern, but I'm not that dogmatic, and consider it just another approach, in
 which the focus is on end-to-end tests, and much less on integration and end-to-end tests.
@@ -229,7 +229,9 @@ simplest thing to do is write a end-to-end test.
 This may work for you, but note that you will have to invest a lot in maintaining these
 tests - I know a good number of development teams that have invested a lot in end-to-end
 tests and they almost never have a 100% successful testing run, and that's ok.
--->
+~~~
+
+![Testing cone](assets/scaled/testing-cone.png)
 
 What about Sling?
 ======
@@ -240,6 +242,10 @@ Unit testing with Sling
 Unit testing
 ---
 
+~~~Comment
+A very simple example of a unit test with no dependencies from the Sling code base
+~~~
+
 	@Test public void test_isRedirectValid_null_empty() {
         TestCase.assertFalse(AuthUtil.isRedirectValid(null, null));
         TestCase.assertFalse(AuthUtil.isRedirectValid(null, ""));
@@ -247,13 +253,17 @@ Unit testing
     
 Actual code from [AuthUtilTest.java](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/bundles/auth/core/src/test/java/org/apache/sling/auth/core/AuthUtilTest.java)
 
-<!--
-A very simple example of a unit test with no dependencies from the Sling code base
--->
+
 
 Unit testing with ad-hoc mocking
 ---
 
+~~~Comment
+This time the tests needs to interact with a ResourceResolver and
+HttpServletRequest, so it mocks stuff. I've omitted the actual expectations since
+it takes too much space, but we had a total of 8 lines of expectation code, which 
+configure the context path and request attributes
+~~~
 	
 	@RunWith(JMock.class) public class AuthUtilTest {
       final Mockery context = new JUnit4Mockery();
@@ -268,15 +278,13 @@ Unit testing with ad-hoc mocking
 
 Actual code also from [AuthUtilTest.java](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/bundles/auth/core/src/test/java/org/apache/sling/auth/core/AuthUtilTest.java)
 
-<!--
-This time the tests needs to interact with a ResourceResolver and
-HttpServletRequest, so it mocks stuff. I've omitted the actual expectations since
-it takes too much space, but we had a total of 8 lines of expectation code, which 
-configure the context path and request attributes
--->
-
 Unit testing with ad-hoc mocking
 ---
+
+~~~Comment
+This is that the ad-hoc mocked code actually looks like, not rocket science, but
+on the other hand it's a bit verbose.
+~~~
 
 	context.checking(new Expectations() {
 	    {
@@ -287,13 +295,18 @@ Unit testing with ad-hoc mocking
 	    }
 	});
 
-<!--
-This is that the ad-hoc mocked code actually looks like, not rocket science, but
-on the other hand it's a bit verbose.
--->
-
 Unit testing with Sling mocks
 ---
+
+~~~Comment
+Another test, this time there is no framework-based mocking, but we're explicitly using a
+MockSlingHttpServletRequest. I for one find this style code more natural, and reusing a pre-made
+object also eliminates the potential for duplication throught the tests.
+
+A quick note - there is an a rich vocabulary in the testing community regarding test object
+semantics - what is a mock, what is a stub, what is a spy, but we generally regard our
+test objects as mocks and name them consistently that way.
+~~~
 
 	public class ModelAdapterFactoryUtilTest {
 	
@@ -308,22 +321,10 @@ Unit testing with Sling mocks
 
 Actual code from [ModelAdapterFactoryUtilTest.java](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/testing/mocks/sling-mock/src/test/java/org/apache/sling/testing/mock/sling/context/ModelAdapterFactoryUtilTest.java).
 
-<!--
-Another test, this time there is no framework-based mocking, but we're explicitly using a
-MockSlingHttpServletRequest. I for one find this style code more natural, and reusing a pre-made
-object also eliminates the potential for duplication throught the tests.
-
-A quick note - there is an a rich vocabulary in the testing community regarding test object
-semantics - what is a mock, what is a stub, what is a spy, but we generally regard our
-test objects as mocks and name them consistently that way.
--->
-
 OSGi
 ---
 
-![OSGi](assets/scaled/brick-wall.jpg)
-
-<!--
+~~~Comment
 Let me start by saying that I wholeheartedly, no-ifs-or-buts love OSGi. For the last four
 years I've used it for Java application I've written, and have not looked back.
 
@@ -337,10 +338,21 @@ which really adds to startup time.
 
 So while there are option which we can use for OSGi integration testing, at least
 for Sling apps, we need a different approach for unit testing.
--->
+~~~
+
+![OSGi](assets/scaled/brick-wall.jpg)
 
 Unit testing OSGi code with Sling mocks
 ---
+
+~~~Comment
+What this piece of code shows is registering, activating, injecting OSGi services from a bundle, without
+having an OSGi framework available.
+
+There are no bundle lists to construct, no private fields injection to satisfy dependencies, it's all done behind
+the scenes by Sling Mocks. This opens up a lot of interesting possibilities regarding testing services in isolation,
+with test double components ( mocks or otherwise ).
+~~~
 
 	public class ExampleTest {
 	
@@ -359,57 +371,24 @@ Unit testing OSGi code with Sling mocks
 
 Picked up from the [OSGi mocks documentation](https://sling.apache.org/documentation/development/osgi-mock.html).
 
-<!--
-What this piece of code shows is registering, activating, injecting OSGi services from a bundle, without
-having an OSGi framework available.
-
-There are no bundle lists to construct, no private fields injection to satisfy dependencies, it's all done behind
-the scenes by Sling Mocks. This opens up a lot of interesting possibilities regarding testing services in isolation,
-with test double components ( mocks or otherwise ).
--->
-
 Sling mocks
 --
 
-* donated to the Sling project in Octomber 2014 by Stefan Seifert
-* focus on running Apache Sling in an in-memory environment suitable for unit tests
-
-<!--
-
+~~~Comment
 The Sling mocks are a relatively recent addition to the Sling project. They are in the 'good-fidelity/excellent speed' 
 unit tests area.
 
 They don't aim to perfectly mimic the frameworks that they are mocking, but instead to get a 'good-enough' setup
 for unit tests running.
+~~~
 
--->
+* donated to the Sling project in Octomber 2014 by Stefan Seifert
+* focus on running Apache Sling in an in-memory environment suitable for unit tests
 
 The humble object pattern with OSGi
 ---
-    public interface RouterAdmin {
-	  void doStuff();
-	}
-	
-	public class RouterAdminImpl implements RouterAdmin {
-	  // constructor and field elided 
-      public void doStuff() { // implementation }
-	}
-	
-	@Component @Properties({ @Property(name="url") })
-	public class RouterAdminComponent implements RouterAdmin {
-	  private RouterAdmin delegate;
 
-      protected void activate(ComponentContext ctx) throws Exception {
-        delegate = new RouterAdminImpl(new URL(requireString(ctx, "url")));
-      }
-      
-      public void doStuff() {
-        delegate.doStuff();
-      }
-	}
-
-<!--
-
+~~~Comment
 Here's an idea which I've been experimenting with at small scale, based on the Humble Object pattern.
 
 The idea behind this pattern is to extract the logic into a separate easy-to-test component
@@ -435,14 +414,34 @@ As you can see in the code, assuming that we have a RouterAdmin interface, we cr
 This allows us to test the RouterAdminImpl in isolation. And just as important, objects
 depending on the RouterAdmin don't know and don't care if they're talking to the OSGi component
 or the humble objects, which means that we can easily substitute something else during unit tests.
--->
+~~~
+
+    public interface RouterAdmin {
+	  void doStuff();
+	}
+	
+	public class RouterAdminImpl implements RouterAdmin {
+	  // constructor and field elided 
+      public void doStuff() { // implementation }
+	}
+	
+	@Component @Properties({ @Property(name="url") })
+	public class RouterAdminComponent implements RouterAdmin {
+	  private RouterAdmin delegate;
+
+      protected void activate(ComponentContext ctx) throws Exception {
+        delegate = new RouterAdminImpl(new URL(requireString(ctx, "url")));
+      }
+      
+      public void doStuff() {
+        delegate.doStuff();
+      }
+	}
 
 JCR
 ---
 
-![JCR](assets/scaled/oak-tree.jpg)
-
-<!--
+~~~Comment
 
 Then comes JCR. JCR is pretty interesting here because it has a different
 opinion no how persistence should be handled from an API points of view.
@@ -454,11 +453,29 @@ it in 'Patterns of Enterprise Application Architecture' as it is able to
 deal with persistence itself.
 
 So the patterns with mocking collaborating DAOs that we saw earlier do not apply.
--->
+~~~
 
+![JCR](assets/scaled/oak-tree.jpg)
 
 Testing JCR code with Sling mocks
 ---
+
+~~~Comment
+The answer, again, is Sling mocks. Aside from providing a test OSGi-like environment,
+Sling mocks provides a number of ResourceResolver implementations out-of-the-box, which 
+allows you to work with a ResourceResolver without actually creating a full-fledged
+JCR repository, like Jackrabbit or Jackrabbit Oak.
+
+In this test we can see JCR_MOCK as a resource resolver type. This simulates a 
+simple JCR implementation, without the bells and whistles like observation, versioning,
+ACLs, etc. But you can get away with it is mostly do read-write operations, including queries.
+
+There's also a SLING_MOCK implementation, which you can use if you only work at the
+resource level.
+
+This example has some basic usage, creating resources in test, preparing query results
+and then validating that results are correct.
+~~~
 
     public class FindResourcesTest {
 
@@ -485,29 +502,10 @@ Testing JCR code with Sling mocks
 
 Code taken from [FindResourceTest.java](https://github.com/apache/sling/blob/bc0f839fbcc18ea9d7f75ded51fdbc6ee0e05ba5/testing/mocks/sling-mock/src/test/java/org/apache/sling/testing/mock/sling/jcrmock/resource/FindResourcesTest.java).
 
-<!--
-The answer, again, is Sling mocks. Aside from providing a test OSGi-like environment,
-Sling mocks provides a number of ResourceResolver implementations out-of-the-box, which 
-allows you to work with a ResourceResolver without actually creating a full-fledged
-JCR repository, like Jackrabbit or Jackrabbit Oak.
-
-In this test we can see JCR_MOCK as a resource resolver type. This simulates a 
-simple JCR implementation, without the bells and whistles like observation, versioning,
-ACLs, etc. But you can get away with it is mostly do read-write operations, including queries.
-
-There's also a SLING_MOCK implementation, which you can use if you only work at the
-resource level.
-
-This example has some basic usage, creating resources in test, preparing query results
-and then validating that results are correct.
---> 
-
 Sling
 --
 
-![slingshots](assets/scaled/slingshots.jpg)
-
-<!--
+~~~Comment
 And last of all, or rather on top of all that, comes Sling. Sling can be seen as both a 
 set of central APIs which appear in tests - the ResourceResolver and Adaptable interfaces
 come into mind and as various OSGi services that your code interacts with - 
@@ -516,10 +514,30 @@ SlingSettingsService, Sling Jobs, discovery etc.
 Also worth mentioning that for AEM there are also the AEM mocks which provide some
 stuff which is tailored for AEM use - they play nicely with the Sling mocks
 so look into them if you're testing against AEM.
--->
+~~~
+
+![slingshots](assets/scaled/slingshots.jpg)
 
 Sling Mocks for unit testing
 ---
+
+~~~Comment
+Not suprisingly, it's also Sling Mocks here. If we can test OSGi and JCR with Sling Mocks, we
+can definitely test any Sling code. But on top of that, Sling Mocks also registers some
+services out-of-the box:
+
+- AdapterManager
+- SlingSettingsService
+- MimeTypeService
+- ModelAdapterFactory
+
+and also provides other utilities
+
+- ContentLoader for loading data from JSON into the repository
+- Mock objects for request handling
+- ContentBuilder for programmatic resource creation
+
+~~~
 
 	public class SimpleNoSqlResourceProviderQueryTest {
     
@@ -546,24 +564,6 @@ Sling Mocks for unit testing
     
 Code from [SimpleNoSqlResourceProviderQueryTest](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/contrib/nosql/generic/src/test/java/org/apache/sling/nosql/generic/simple/SimpleNoSqlResourceProviderQueryTest.java)
 
-<!--
-Not suprisingly, it's also Sling Mocks here. If we can test OSGi and JCR with Sling Mocks, we
-can definitely test any Sling code. But on top of that, Sling Mocks also registers some
-services out-of-the box:
-
-- AdapterManager
-- SlingSettingsService
-- MimeTypeService
-- ModelAdapterFactory
-
-and also provides other utilities
-
-- ContentLoader for loading data from JSON into the repository
-- Mock objects for request handling
-- ContentBuilder for programmatic resource creation
-
--->
-
 Sling Mocks for unit testing
 ---
 
@@ -577,6 +577,15 @@ Sling Mocks for unit testing
 Hamcrest matchers
 --
 
+~~~Comment
+When writing unit tests there are many ways of asserting. Obviously you can get away with using assertTrue(condition)
+but that's not a very good idea. Custom assertions clarify the contract and make sure exactly what part
+of the condition failed.
+
+I have recently added this module to SVN, there is no release yet - plan to do so the next week, but feel tree
+to try out and ask for more stuff.
+~~~
+
     @Test public void loadResources() {
 
       Map<String, Object> expectedProperties = /* define properties */;
@@ -589,20 +598,18 @@ Hamcrest matchers
 
 Taken from the [Hamcrest integration documentation](http://sling.apache.org/documentation/development/hamcrest.html).
 
-<!--
-When writing unit tests there are many ways of asserting. Obviously you can get away with using assertTrue(condition)
-but that's not a very good idea. Custom assertions clarify the contract and make sure exactly what part
-of the condition failed.
-
-I have recently added this module to SVN, there is no release yet - plan to do so the next week, but feel tree
-to try out and ask for more stuff.
--->
-
 Integration testing with Sling
 ==
 
 Pax-Exam
 --
+
+~~~Comment
+Traditionally one of the complicated things with setting up Pax-Exam for Sling was 
+putting together the bundle list, which is now made very simple by the SlingPaxOptions
+class. This provisions a Sling Launchpad with all the needed bundles so you 
+don't have to keep the list up-to-date.
+~~~
 
     public static Option[] paxConfig() {
         final File thisProjectsBundle = new File(System.getProperty( "bundle.file.name", "BUNDLE_FILE_NOT_SET" ));
@@ -617,16 +624,13 @@ Pax-Exam
 	
 Taken from [U.java](https://github.com/apache/sling/blob/bc0f839fbcc18ea9d7f75ded51fdbc6ee0e05ba5/bundles/commons/contentdetection/src/test/java/org/apache/sling/commons/contentdetection/internal/it/U.java)
 
-<!--
-Traditionally one of the complicated things with setting up Pax-Exam for Sling was 
-putting together the bundle list, which is now made very simple by the SlingPaxOptions
-class. This provisions a Sling Launchpad with all the needed bundles so you 
-don't have to keep the list up-to-date.
--->
-
 Pax-Exam
 --
 
+~~~Comment
+And then this utility class can be reused in as many tests as you would like.
+Simple and concise.
+~~~
 
 	@RunWith(PaxExam.class) public class FileNameExtractorImplIT {
 
@@ -644,23 +648,11 @@ Pax-Exam
     }
 
 Taken from [FileNameExtractorImplIT.java](https://github.com/apache/sling/blob/bc0f839fbcc18ea9d7f75ded51fdbc6ee0e05ba5/bundles/commons/contentdetection/src/test/java/org/apache/sling/commons/contentdetection/internal/it/FileNameExtractorImplIT.java).
-
-<!--
-And then this utility class can be reused in as many tests as you would like.
-Simple and concise.
--->
 	
 Sling mocks with a JCR backend
 --
 
-* Unit testing with JCR Mocks
-  * JCR_MOCK
-  * SLING_MOCK
-* Integration testing with JCR Mocks
-  * JCR_JACKRABBIT
-  * JCR_OAK
-
-<!--
+~~~Comment
 I previously mentioned that there are multiple resource resolver types implemented 
 in the Sling mocks. JCR_MOCK and SLING_MOCK are fast, in-memory, implementations
 used for unit testing.
@@ -671,10 +663,39 @@ starts a Jackrabbit 2.x respository while OAK starts an Oak 1.2.x repository.
 
 You can keep the same test cases and switch from one resource resolver type
 to another and they should work the same.
--->
+~~~
+
+* Unit testing with JCR Mocks
+  * JCR_MOCK
+  * SLING_MOCK
+* Integration testing with JCR Mocks
+  * JCR_JACKRABBIT
+  * JCR_OAK
 
 Server-side JUnit tests
 --
+
+~~~Comment
+The sling testing tools allow you to deploy test code straight into a running Sling instance,
+executing them and retrieving the results.
+
+We do this by simply teleporting the code from the test workspace to the running instance.
+If you want to know more about this magic, ask Bertrand.
+
+Some key points here:
+
+- we have a TeleporterRule which does most of the work, making sure that the instance is set up
+  ( the "Launchpad" argument points to a customiser which handles some of that )
+  and a bundle is built on the fly and then deployed to the running instance,
+  a test executed and the results retrieved
+- the TeleporterRule can access OSGi services, so basically everything is available to you
+
+It's a nice complement to Pax-testing, for the situations where you prefer to provision your
+launchpad instance in a different manner.
+
+And also has the coolest name that I know of for a testing tool. Ok, Mockito comes close, but
+this is better :-) 
+~~~
 
     public class ServerSideInstallerTest {
     
@@ -695,31 +716,16 @@ Server-side JUnit tests
       }
     }
 
-<!--
-The sling testing tools allow you to deploy test code straight into a running Sling instance,
-executing them and retrieving the results.
-
-We do this by simply teleporting the code from the test workspace to the running instance.
-If you want to know more about this magic, ask Bertrand.
-
-Some key points here:
-
-- we have a TeleporterRule which does most of the work, making sure that the instance is set up
-  ( the "Launchpad" argument points to a customiser which handles some of that )
-  and a bundle is built on the fly and then deployed to the running instance,
-  a test executed and the results retrieved
-- the TeleporterRule can access OSGi services, so basically everything is available to you
-
-It's a nice complement to Pax-testing, for the situations where you prefer to provision your
-launchpad instance in a different manner.
-
-And also has the coolest name that I know of for a testing tool. Ok, Mockito comes close, but
-this is better :-) 
--->
-
-
 Scriptable server-side tests
 ---
+
+~~~Comment
+You can execute scripts as tests. The mechanism is very simple - you only need to output
+TEST_PASSED and the test passes. I would recommend using these tests only when you
+have core scripting functionality  to test ; otherwise the TeleporterRule is very
+much preferred.
+~~~
+
 
 	// test imports that fail on Java 8, SLING-3405
 	
@@ -730,19 +736,16 @@ Scriptable server-side tests
 
 Actual code from [installer-duplicate.jsp](https://github.com/apache/sling/blob/e252fc651ab42037af0386bc4cd2b1fc26b13b7b/launchpad/integration-tests/src/main/resources/scripts/sling-it/imports.jsp).
 
-<!--
-You can execute scripts as tests. The mechanism is very simple - you only need to output
-TEST_PASSED and the test passes. I would recommend using these tests only when you
-have core scripting functionality  to test ; otherwise the TeleporterRule is very
-much preferred.
--->
-
-
 End-to-end testing with Sling
 ==
 
 HTTP utilities from the Sling testing tools
 --
+
+~~~Comment
+And finally, if you are looking to write some end-to-end tests, the Apache Sling Testing Utilities
+module does have support classes for running HTTP-based tests.
+~~~ 
 
 	public class HttpPingTest extends HttpTestBase {
       public void testWebServerRoot() throws Exception {
@@ -760,20 +763,13 @@ HTTP utilities from the Sling testing tools
 
 Code taken from [HttpPingTest.java](https://github.com/apache/sling/blob/05352b46fbb54c3e7f03b6a59462e8fa64ec633c/launchpad/integration-tests/src/main/java/org/apache/sling/launchpad/webapp/integrationtest/HttpPingTest.java)
 
-<!--
-And finally, if you are looking to write some end-to-end tests, the Apache Sling Testing Utilities
-module does have support classes for running HTTP-based tests.
---> 
-
 Code time
 ==
 
 Slingshot
 --
 
-![Demo](assets/scaled/code.jpg)
-
-<!--
+~~~Comment
 Slingshot is one of the samples from the Sling source tree. It's basically a photo-sharing application,
 you can launch it easily into the default launchpad to see some more details. But what I want to do now is to 
 show you some Sling Mocks-based tests so you can get the feel of the complete setup.
@@ -783,7 +779,9 @@ show you some Sling Mocks-based tests so you can get the feel of the complete se
 - JCR_MOCK/SLING_MOCK test - RatingServiceImplTest
 - JCR_JACKRABBIT test - SetupServiceTest
 
--->
+~~~
+
+![Demo](assets/scaled/code.jpg)
 
 Final thoughts
 --
